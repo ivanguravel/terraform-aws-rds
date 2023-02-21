@@ -42,7 +42,7 @@ module "db" {
   port     = 3306
 
   multi_az               = true
-  db_subnet_group_name   = module.vpc.database_subnet_group
+  db_subnet_group_name   = aws_db_subnet_group.default.name
   vpc_security_group_ids = [module.security_group.security_group_id]
 
   maintenance_window              = "Mon:00:00-Mon:03:00"
@@ -108,7 +108,7 @@ module "db_default" {
   username = "complete_mysql"
   port     = 3306
 
-  db_subnet_group_name   = module.vpc.database_subnet_group
+  db_subnet_group_name   = aws_db_subnet_group.default.name
   vpc_security_group_ids = [module.security_group.security_group_id]
 
   maintenance_window = "Mon:00:00-Mon:03:00"
@@ -133,22 +133,15 @@ module "db_disabled" {
 # Supporting Resources
 ################################################################################
 
-module "vpc" {
-  source  = "terraform-aws-modules/vpc/aws"
-  version = "~> 3.0"
+resource "aws_db_subnet_group" "default" {
+  name       = "main"
+  subnet_ids = [aws_default_subnet.default_subnet_a.id, aws_default_subnet.default_subnet_b.id]
 
-  name = local.name
-  cidr = local.vpc_cidr
-
-  azs              = local.azs
-  public_subnets   = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k)]
-  private_subnets  = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k + 3)]
-  database_subnets = [for k, v in local.azs : cidrsubnet(local.vpc_cidr, 8, k + 6)]
-
-  create_database_subnet_group = true
-
-  tags = local.tags
+  tags = {
+    Name = "My DB subnet group"
+  }
 }
+
 
 module "security_group" {
   source  = "terraform-aws-modules/security-group/aws"
@@ -156,7 +149,7 @@ module "security_group" {
 
   name        = local.name
   description = "Complete MySQL example security group"
-  vpc_id      = module.vpc.vpc_id
+  vpc_id      = aws_default_vpc.default_vpc.id
 
   # ingress
   ingress_with_cidr_blocks = [
@@ -165,9 +158,25 @@ module "security_group" {
       to_port     = 3306
       protocol    = "tcp"
       description = "MySQL access from within VPC"
-      cidr_blocks = module.vpc.vpc_cidr_block
+      cidr_blocks = ["0.0.0.0/0"]
     },
   ]
 
   tags = local.tags
+}
+
+resource "aws_default_vpc" "default_vpc" {
+}
+
+# Providing a reference to our default subnets
+resource "aws_default_subnet" "default_subnet_a" {
+  availability_zone = "eu-west-2a"
+}
+
+resource "aws_default_subnet" "default_subnet_b" {
+  availability_zone = "eu-west-2b"
+}
+
+resource "aws_default_subnet" "default_subnet_c" {
+  availability_zone = "eu-west-2c"
 }
