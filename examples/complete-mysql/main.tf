@@ -6,7 +6,7 @@ data "aws_availability_zones" "available" {}
 
 locals {
   name   = "complete-mysql"
-  region = "eu-west-1"
+  region = "eu-west-2"
 
   vpc_cidr = "10.0.0.0/16"
   azs      = slice(data.aws_availability_zones.available.names, 0, 3)
@@ -170,13 +170,13 @@ resource "aws_default_vpc" "default_vpc" {
 
 # Providing a reference to our default subnets
 resource "aws_default_subnet" "default_subnet_a" {
-  availability_zone = "eu-west-1a"
+  availability_zone = "eu-west-2a"
 }
 
 resource "aws_default_subnet" "default_subnet_b" {
-  availability_zone = "eu-west-1b"
+  availability_zone = "eu-west-2b"
 }
 
 resource "aws_default_subnet" "default_subnet_c" {
-  availability_zone = "eu-west-1c"
+  availability_zone = "eu-west-2c"
 }
